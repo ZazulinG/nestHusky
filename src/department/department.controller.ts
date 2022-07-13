@@ -1,20 +1,30 @@
-import {Controller, Get, Post, Body, Patch, Param, Delete, Put} from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Patch,
+  Param,
+  Delete,
+  Put,
+} from '@nestjs/common';
 import { DepartmentService } from './department.service';
 import { CreateDepartmentDto } from './dto/create-department.dto';
 import { UpdateDepartmentDto } from './dto/update-department.dto';
-import {Department} from "./entities/department.entity";
-import {ObjectId} from "mongoose";
+import { Department } from './entities/department.entity';
 
 @Controller('departments')
 export class DepartmentController {
   constructor(private readonly departmentService: DepartmentService) {}
 
   @Post()
-  create(@Body() createDepartmentDto: CreateDepartmentDto): Promise<Department> {
+  create(
+    @Body() createDepartmentDto: CreateDepartmentDto,
+  ): Promise<Department> {
     try {
       return this.departmentService.create(createDepartmentDto);
-    }catch (e) {
-      console.log(e)
+    } catch (e) {
+      console.log(e);
     }
   }
 
@@ -22,8 +32,8 @@ export class DepartmentController {
   findAll() {
     try {
       return this.departmentService.findAll();
-    }catch (e) {
-      console.log(e)
+    } catch (e) {
+      console.log(e);
     }
   }
 
@@ -31,17 +41,20 @@ export class DepartmentController {
   async findOne(@Param('id') id: string) {
     try {
       return await this.departmentService.findOne(id);
-    }catch (e) {
-      console.log(e)
+    } catch (e) {
+      console.log(e);
     }
   }
 
   @Patch(':id')
-  update(@Param('id') id: string, @Body() updateDepartmentDto: UpdateDepartmentDto) {
+  update(
+    @Param('id') id: string,
+    @Body() updateDepartmentDto: UpdateDepartmentDto,
+  ) {
     try {
       return this.departmentService.update(id, updateDepartmentDto);
-    }catch (e) {
-      console.log(e)
+    } catch (e) {
+      console.log(e);
     }
   }
 
@@ -49,17 +62,20 @@ export class DepartmentController {
   remove(@Param('id') id: string) {
     try {
       return this.departmentService.remove(id);
-    }catch (e) {
-      console.log(e)
+    } catch (e) {
+      console.log(e);
     }
   }
 
   @Put(':idDep/employees/:id')
-  deleteEmpFromDepartment(@Param('id') idEmp: string, @Param('idDep') idDep: string){
+  deleteEmpFromDepartment(
+    @Param('id') idEmp: string,
+    @Param('idDep') idDep: string,
+  ) {
     try {
-      return this.departmentService.deleteEmployeeFromDepartment(idEmp, idDep)
-    }catch (e) {
-      console.log(e)
+      return this.departmentService.deleteEmployeeFromDepartment(idEmp, idDep);
+    } catch (e) {
+      console.log(e);
     }
   }
 }

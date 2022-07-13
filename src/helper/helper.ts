@@ -1,14 +1,14 @@
-import mongoose from "mongoose";
-import {NotFoundException} from "@nestjs/common";
+import mongoose from 'mongoose';
+import { NotFoundException } from '@nestjs/common';
 
 export function validate(id: string) {
-    let valid = false;
-    try{
-        if(id === String(new mongoose.Types.ObjectId(id))){
-            valid = true;
-        }
-    }catch(e){
-        throw new NotFoundException();
+  let valid = false;
+  try {
+    if (id === String(new mongoose.Types.ObjectId(id))) {
+      valid = true;
     }
-    return valid;
+  } catch (e) {
+    throw new NotFoundException();
+  }
+  return valid;
 }

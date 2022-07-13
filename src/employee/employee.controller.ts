@@ -1,9 +1,16 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Patch,
+  Param,
+  Delete,
+} from '@nestjs/common';
 import { EmployeeService } from './employee.service';
 import { CreateEmployeeDto } from './dto/create-employee.dto';
 import { UpdateEmployeeDto } from './dto/update-employee.dto';
-import {ObjectId} from "mongoose";
-import {Employee} from "./entities/employee.entity";
+import { Employee } from './entities/employee.entity';
 
 @Controller('employees')
 export class EmployeeController {
@@ -13,8 +20,8 @@ export class EmployeeController {
   create(@Body() createEmployeeDto: CreateEmployeeDto): Promise<Employee> {
     try {
       return this.employeeService.create(createEmployeeDto);
-    }catch (e) {
-      console.log(e)
+    } catch (e) {
+      console.log(e);
     }
   }
 
@@ -22,8 +29,8 @@ export class EmployeeController {
   findAll(): Promise<Employee[]> {
     try {
       return this.employeeService.findAll();
-    }catch (e) {
-      console.log(e)
+    } catch (e) {
+      console.log(e);
     }
   }
 
@@ -31,17 +38,20 @@ export class EmployeeController {
   findOne(@Param('id') id: string): Promise<Employee> {
     try {
       return this.employeeService.findOne(id);
-    }catch (e) {
-      console.log(e)
+    } catch (e) {
+      console.log(e);
     }
   }
 
   @Patch(':id')
-  update(@Param('id') id: string, @Body() updateEmployeeDto: UpdateEmployeeDto): Promise<Employee> {
+  update(
+    @Param('id') id: string,
+    @Body() updateEmployeeDto: UpdateEmployeeDto,
+  ): Promise<Employee> {
     try {
       return this.employeeService.update(id, updateEmployeeDto);
-    }catch (e) {
-      console.log(e)
+    } catch (e) {
+      console.log(e);
     }
   }
 
@@ -49,8 +59,8 @@ export class EmployeeController {
   remove(@Param('id') id: string) {
     try {
       return this.employeeService.remove(id);
-    }catch (e) {
-      console.log(e)
+    } catch (e) {
+      console.log(e);
     }
   }
 }
