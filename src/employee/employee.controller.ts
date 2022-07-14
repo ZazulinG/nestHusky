@@ -6,11 +6,16 @@ import {
   Patch,
   Param,
   Delete,
+  Res,
+  UseInterceptors,
+  UploadedFile,
 } from '@nestjs/common';
 import { EmployeeService } from './employee.service';
 import { CreateEmployeeDto } from './dto/create-employee.dto';
 import { UpdateEmployeeDto } from './dto/update-employee.dto';
 import { Employee } from './entities/employee.entity';
+import { Response } from 'express';
+import { FileInterceptor } from '@nestjs/platform-express';
 
 @Controller('employees')
 export class EmployeeController {
@@ -26,39 +31,62 @@ export class EmployeeController {
   }
 
   @Get()
-  findAll(): Promise<Employee[]> {
+  async findAll(): Promise<Employee[]> {
     try {
-      return this.employeeService.findAll();
+      return await this.employeeService.findAll();
+    } catch (e) {
+      console.log(e);
+    }
+  }
+
+  @Get('dump')
+  async dump(@Res() res: Response) {
+    try {
+      await this.employeeService.getDump();
+      return res.download('dumbs/employees.csv');
     } catch (e) {
       console.log(e);
     }
   }
 
   @Get(':id')
-  findOne(@Param('id') id: string): Promise<Employee> {
+  async findOne(@Param('id') id: string): Promise<Employee> {
     try {
-      return this.employeeService.findOne(id);
+      return await this.employeeService.findOne(id);
+    } catch (e) {
+      console.log(e);
+    }
+  }
+
+  @Post('importdb/:mode')
+  @UseInterceptors(FileInterceptor('file'))
+  async importDatabaseCreate(
+    @Param('mode') mode,
+    @UploadedFile() file: Express.Multer.File,
+  ) {
+    try {
+      return await this.employeeService.readCsvFile(file, mode);
     } catch (e) {
       console.log(e);
     }
   }
 
   @Patch(':id')
-  update(
+  async update(
     @Param('id') id: string,
     @Body() updateEmployeeDto: UpdateEmployeeDto,
   ): Promise<Employee> {
     try {
-      return this.employeeService.update(id, updateEmployeeDto);
+      return await this.employeeService.update(id, updateEmployeeDto);
     } catch (e) {
       console.log(e);
     }
   }
 
   @Delete(':id')
-  remove(@Param('id') id: string) {
+  async remove(@Param('id') id: string) {
     try {
-      return this.employeeService.remove(id);
+      return await this.employeeService.remove(id);
     } catch (e) {
       console.log(e);
     }

@@ -5,12 +5,21 @@ import { InjectModel } from '@nestjs/mongoose';
 import { Employee, EmployeeDocument } from './entities/employee.entity';
 import { Model } from 'mongoose';
 import { validate } from '../helper/helper';
+import FileHelper from '../helper/FileHelper';
+import {
+  Department,
+  DepartmentDocument,
+} from '../department/entities/department.entity';
+import csv from 'csvtojson';
 
 @Injectable()
 export class EmployeeService {
   constructor(
     @InjectModel(Employee.name) private employeeModel: Model<EmployeeDocument>,
+    @InjectModel(Department.name)
+    private departmentModel: Model<DepartmentDocument>,
   ) {}
+
   async create(createEmployeeDto: CreateEmployeeDto): Promise<Employee> {
     return await this.employeeModel.create(createEmployeeDto);
   }
@@ -53,5 +62,33 @@ export class EmployeeService {
       return 'success deleted';
     }
     throw new NotFoundException();
+  }
+
+  async getDump() {
+    const employees = await this.employeeModel.find().select('-__v');
+    await FileHelper.dump(employees, 'employees');
+  }
+
+  async readCsvFile(fileData, mode) {
+    const json = await csv({}).fromString(String(fileData.buffer));
+    if (mode === 'update') {
+      json.map(async (item) => {
+        const id = item._id;
+        delete item._id;
+        if (item.department === 'null') {
+          item.department = null;
+        }
+        await this.employeeModel.updateOne({ _id: id }, item);
+      });
+      return 'Записи успешно обновлены';
+    } else if (mode === 'create') {
+      json.map(async (item) => {
+        if (item.department === 'null') {
+          item.department = null;
+        }
+        await this.employeeModel.create(item);
+      });
+      return 'Записи успешно созданы';
+    }
   }
 }

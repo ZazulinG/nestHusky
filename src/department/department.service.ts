@@ -18,7 +18,8 @@ import { validate } from '../helper/helper';
 @Injectable()
 export class DepartmentService {
   constructor(
-    @InjectModel(Department.name) private departmentModel: Model<DepartmentDocument>,
+    @InjectModel(Department.name)
+    private departmentModel: Model<DepartmentDocument>,
     @InjectModel(Employee.name) private employeeModel: Model<EmployeeDocument>,
   ) {}
   async create(createDepartmentDto: CreateDepartmentDto): Promise<Department> {
