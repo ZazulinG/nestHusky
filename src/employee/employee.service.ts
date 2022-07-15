@@ -11,6 +11,7 @@ import {
   DepartmentDocument,
 } from '../department/entities/department.entity';
 import csv from 'csvtojson';
+import {filter} from "rxjs";
 
 @Injectable()
 export class EmployeeService {
@@ -29,7 +30,7 @@ export class EmployeeService {
   }
 
   async findOne(id: string): Promise<Employee> {
-    validate(id);
+    if(!validate(id)) throw new NotFoundException();
     const emp = await this.employeeModel
       .findOne({ _id: id })
       .populate('department');
@@ -43,7 +44,7 @@ export class EmployeeService {
     id: string,
     updateEmployeeDto: UpdateEmployeeDto,
   ): Promise<Employee> {
-    validate(id);
+    if(!validate(id)) throw new NotFoundException();
     const updatedEmp = await this.employeeModel.findOne({ _id: id });
     if (updatedEmp) {
       return this.employeeModel.findOneAndUpdate(
@@ -56,7 +57,7 @@ export class EmployeeService {
   }
 
   async remove(id: string) {
-    validate(id);
+    if(!validate(id)) throw new NotFoundException();
     const empDeleted = await this.employeeModel.deleteOne({ _id: id });
     if (empDeleted.deletedCount) {
       return 'success deleted';
@@ -66,29 +67,42 @@ export class EmployeeService {
 
   async getDump() {
     const employees = await this.employeeModel.find().select('-__v');
-    await FileHelper.dump(employees, 'employees');
+    return await FileHelper.dump(employees);
   }
 
   async readCsvFile(fileData, mode) {
     const json = await csv({}).fromString(String(fileData.buffer));
     if (mode === 'update') {
-      json.map(async (item) => {
-        const id = item._id;
-        delete item._id;
-        if (item.department === 'null') {
-          item.department = null;
-        }
-        await this.employeeModel.updateOne({ _id: id }, item);
-      });
-      return 'Записи успешно обновлены';
+      let handledItems = json.reduce((objectValues, item) =>{
+        if (!item.department) item.department = null;
+        if(validate(item._id) && (validate(item.department) || !item.department)){
+          const id = item._id;
+          delete item._id;
+          objectValues.queryForBulk.push({
+            updateOne: {
+              filter: { _id: id },
+              update: {$set: item}
+            }
+          })
+        }else {
+          objectValues.unvalidItems.push(item)
+          }
+        return objectValues
+      }, {unvalidItems: [], queryForBulk: []})
+      await this.employeeModel.bulkWrite(handledItems.queryForBulk)
+      return {'Updated': handledItems.queryForBulk.length, 'Unvalid': handledItems.unvalidItems.length}
     } else if (mode === 'create') {
-      json.map(async (item) => {
-        if (item.department === 'null') {
-          item.department = null;
+      let handledItems = json.reduce((objectValues, item) => {
+        if (!item.department) item.department = null;
+        if(validate(item.department) || !item.department){
+          objectValues.validItems.push(item)
+        }else {
+          objectValues.unvalidItems.push(item)
         }
-        await this.employeeModel.create(item);
-      });
-      return 'Записи успешно созданы';
+        return objectValues
+      }, {validItems:[], unvalidItems:[]})
+      await this.employeeModel.insertMany(handledItems.validItems)
+      return {'Created': handledItems.validItems.length, 'Unvalid': handledItems.unvalidItems.length}
     }
   }
 }

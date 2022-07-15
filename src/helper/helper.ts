@@ -8,7 +8,7 @@ export function validate(id: string) {
       valid = true;
     }
   } catch (e) {
-    throw new NotFoundException();
+    valid = false
   }
   return valid;
 }
