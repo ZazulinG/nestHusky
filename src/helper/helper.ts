@@ -1,5 +1,4 @@
 import mongoose from 'mongoose';
-import { NotFoundException } from '@nestjs/common';
 
 export function validate(id: string) {
   let valid = false;
@@ -8,7 +7,7 @@ export function validate(id: string) {
       valid = true;
     }
   } catch (e) {
-    valid = false
+    valid = false;
   }
   return valid;
 }

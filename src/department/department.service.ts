@@ -37,7 +37,7 @@ export class DepartmentService {
   }
 
   async findOne(id: string): Promise<Department> {
-    if(!validate(id)) throw new NotFoundException();
+    if (!validate(id)) throw new NotFoundException();
     const department = await this.departmentModel.findOne({ _id: id });
     if (department) {
       return department;
@@ -49,7 +49,7 @@ export class DepartmentService {
     id: string,
     updateDepartmentDto: UpdateDepartmentDto,
   ): Promise<Department> {
-    if(!validate(id)) throw new NotFoundException();
+    if (!validate(id)) throw new NotFoundException();
     const department = await this.departmentModel.findOne({ _id: id });
     if (department) {
       return this.departmentModel.findOneAndUpdate(
@@ -62,7 +62,7 @@ export class DepartmentService {
   }
 
   async remove(id: string): Promise<string> {
-    if(!validate(id)) throw new NotFoundException();
+    if (!validate(id)) throw new NotFoundException();
     const emp = this.employeeModel.findOne({ department: id });
     if (emp) {
       throw new NotAcceptableException('employees in the department');
@@ -75,7 +75,7 @@ export class DepartmentService {
   }
 
   async deleteEmployeeFromDepartment(idEmp: string, idDep: string) {
-    if(!validate(idEmp) || !validate(idDep)) throw new NotFoundException();
+    if (!validate(idEmp) || !validate(idDep)) throw new NotFoundException();
     const emp = await this.employeeModel.findOne({
       _id: idEmp,
       department: idDep,

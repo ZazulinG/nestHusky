@@ -43,10 +43,12 @@ export class EmployeeController {
   async dump(@Res() res: Response) {
     try {
       const csvData = await this.employeeService.getDump();
-      res.writeHead(200,{'Content-Type': 'text/csv',
-        'Content-Disposition':'filename="test.csv"'});
-      res.write(csvData)
-      res.end()
+      res.writeHead(200, {
+        'Content-Type': 'text/csv',
+        'Content-Disposition': 'filename="test.csv"',
+      });
+      res.write(csvData);
+      res.end();
     } catch (e) {
       console.log(e);
     }

@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Inject, Injectable, NotFoundException } from '@nestjs/common';
 import { CreateEmployeeDto } from './dto/create-employee.dto';
 import { UpdateEmployeeDto } from './dto/update-employee.dto';
 import { InjectModel } from '@nestjs/mongoose';
@@ -11,7 +11,9 @@ import {
   DepartmentDocument,
 } from '../department/entities/department.entity';
 import csv from 'csvtojson';
-import {filter} from "rxjs";
+import { ClientProxy } from '@nestjs/microservices';
+import * as fs from 'fs';
+import { Readable } from 'stream';
 
 @Injectable()
 export class EmployeeService {
@@ -19,6 +21,7 @@ export class EmployeeService {
     @InjectModel(Employee.name) private employeeModel: Model<EmployeeDocument>,
     @InjectModel(Department.name)
     private departmentModel: Model<DepartmentDocument>,
+    @Inject('SERVICE') private readonly client: ClientProxy,
   ) {}
 
   async create(createEmployeeDto: CreateEmployeeDto): Promise<Employee> {
@@ -30,7 +33,7 @@ export class EmployeeService {
   }
 
   async findOne(id: string): Promise<Employee> {
-    if(!validate(id)) throw new NotFoundException();
+    if (!validate(id)) throw new NotFoundException();
     const emp = await this.employeeModel
       .findOne({ _id: id })
       .populate('department');
@@ -44,7 +47,7 @@ export class EmployeeService {
     id: string,
     updateEmployeeDto: UpdateEmployeeDto,
   ): Promise<Employee> {
-    if(!validate(id)) throw new NotFoundException();
+    if (!validate(id)) throw new NotFoundException();
     const updatedEmp = await this.employeeModel.findOne({ _id: id });
     if (updatedEmp) {
       return this.employeeModel.findOneAndUpdate(
@@ -57,7 +60,7 @@ export class EmployeeService {
   }
 
   async remove(id: string) {
-    if(!validate(id)) throw new NotFoundException();
+    if (!validate(id)) throw new NotFoundException();
     const empDeleted = await this.employeeModel.deleteOne({ _id: id });
     if (empDeleted.deletedCount) {
       return 'success deleted';
@@ -71,38 +74,39 @@ export class EmployeeService {
   }
 
   async readCsvFile(fileData, mode) {
-    const json = await csv({}).fromString(String(fileData.buffer));
     if (mode === 'update') {
-      let handledItems = json.reduce((objectValues, item) =>{
-        if (!item.department) item.department = null;
-        if(validate(item._id) && (validate(item.department) || !item.department)){
-          const id = item._id;
-          delete item._id;
-          objectValues.queryForBulk.push({
-            updateOne: {
-              filter: { _id: id },
-              update: {$set: item}
-            }
-          })
-        }else {
-          objectValues.unvalidItems.push(item)
-          }
-        return objectValues
-      }, {unvalidItems: [], queryForBulk: []})
-      await this.employeeModel.bulkWrite(handledItems.queryForBulk)
-      return {'Updated': handledItems.queryForBulk.length, 'Unvalid': handledItems.unvalidItems.length}
+      // const stream =  await csv({}).fromString(String(fileData.buffer)).subscribe((item, lineNumber) => {
+      //   console.log(111)
+      //   if (!item.department) item.department = null;
+      //   if (
+      //       validate(item._id) &&
+      //       (validate(item.department) || !item.department)
+      //   ) {
+      //     const id = item._id;
+      //     delete item._id;
+      //     this.client.emit('updateEmp', {id, item})
+      //   }
+      // }).on('end', ()=>{
+      //   console.log('файл закрыт')})
+
+      const rstream = Readable.from(fileData.buffer.toString());
+      rstream.on('data', (chunk) => {
+        console.log(chunk);
+      });
+      const wstream = fs.createWriteStream('test.txt');
+      rstream.pipe(csv()).pipe(wstream);
+
+      return 'success';
     } else if (mode === 'create') {
-      let handledItems = json.reduce((objectValues, item) => {
-        if (!item.department) item.department = null;
-        if(validate(item.department) || !item.department){
-          objectValues.validItems.push(item)
-        }else {
-          objectValues.unvalidItems.push(item)
-        }
-        return objectValues
-      }, {validItems:[], unvalidItems:[]})
-      await this.employeeModel.insertMany(handledItems.validItems)
-      return {'Created': handledItems.validItems.length, 'Unvalid': handledItems.unvalidItems.length}
+      // const stream = await csv({})
+      //   .fromString(String(fileData.buffer))
+      //   .subscribe((item, lineNumber) => {
+      //     if (!item.department) item.department = null;
+      //     if (validate(item.department) || !item.department) {
+      //       this.client.emit('createEmp', item);
+      //     }
+      //   });
+      return 'success';
     }
   }
 }

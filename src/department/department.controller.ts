@@ -67,9 +67,9 @@ export class DepartmentController {
     }
   }
 
-  @Put(':idDep/employees/:id')
+  @Put(':idDep/employees/:idEmp')
   deleteEmpFromDepartment(
-    @Param('id') idEmp: string,
+    @Param('idEmp') idEmp: string,
     @Param('idDep') idDep: string,
   ) {
     try {
