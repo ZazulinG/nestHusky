@@ -12,15 +12,20 @@ import {
 } from '../department/entities/department.entity';
 import csv from 'csvtojson';
 import { ClientProxy } from '@nestjs/microservices';
-import * as fs from 'fs';
-import { Readable } from 'stream';
+import * as readline from "readline";
+
+import {ReadStream} from "fs";
+import {Process, ProcessDocument} from "./entities/processEntity";
+
+
+
 
 @Injectable()
 export class EmployeeService {
   constructor(
     @InjectModel(Employee.name) private employeeModel: Model<EmployeeDocument>,
-    @InjectModel(Department.name)
-    private departmentModel: Model<DepartmentDocument>,
+    @InjectModel(Department.name) private departmentModel: Model<DepartmentDocument>,
+    @InjectModel(Process.name) private processModel: Model<ProcessDocument>,
     @Inject('SERVICE') private readonly client: ClientProxy,
   ) {}
 
@@ -75,27 +80,45 @@ export class EmployeeService {
 
   async readCsvFile(fileData, mode) {
     if (mode === 'update') {
-      // const stream =  await csv({}).fromString(String(fileData.buffer)).subscribe((item, lineNumber) => {
-      //   console.log(111)
-      //   if (!item.department) item.department = null;
-      //   if (
-      //       validate(item._id) &&
-      //       (validate(item.department) || !item.department)
-      //   ) {
-      //     const id = item._id;
-      //     delete item._id;
-      //     this.client.emit('updateEmp', {id, item})
-      //   }
-      // }).on('end', ()=>{
-      //   console.log('файл закрыт')})
-
-      const rstream = Readable.from(fileData.buffer.toString());
-      rstream.on('data', (chunk) => {
-        console.log(chunk);
+      const currentProcess =  await this.processModel.create({type: mode, status: 'in progress', total: 0, updated: 0, unvalid: 0, duplicate: 0, startIn: new Date(), endIn: null})
+      let unvalid = 0;
+      let total = 0;
+      let data = {
+        queryForBulk: [],
+        currentProcess
+      };
+      const readstream = ReadStream.from(fileData.buffer.toString())
+      const rlstream = readline.createInterface({
+        input: readstream.pipe(csv()),
       });
-      const wstream = fs.createWriteStream('test.txt');
-      rstream.pipe(csv()).pipe(wstream);
+      rlstream.on('line', (item) => {
+        console.log('line')
+        const itemJson = JSON.parse(item)
+        total++
+        if (!itemJson.department) itemJson.department = null;
+        if (validate(itemJson._id) && (validate(itemJson.department) || !itemJson.department)) {
+          const id = itemJson._id;
+          delete itemJson._id;
+          data.queryForBulk.push({updateOne: {filter: {_id: id.toString()}, update: itemJson}})
+          if (data.queryForBulk.length % 2 === 0 && data.queryForBulk.length) {
+            const newData = {
+              queryForBulk: [...data.queryForBulk],
+              currentProcess
+            }
+            this.client.send('updateEmp', newData).subscribe();
+            data.queryForBulk = []
+          }
+        } else {
+          unvalid++
+        }
+      })
 
+      rlstream.on('close', async () => {
+              if(data.queryForBulk.length){
+                this.client.send('updateEmp', data);
+              }
+              await this.processModel.updateOne({_id: currentProcess._id}, {total, unvalid})
+            })
       return 'success';
     } else if (mode === 'create') {
       // const stream = await csv({})
