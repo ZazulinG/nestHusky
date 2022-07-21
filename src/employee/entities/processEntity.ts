@@ -8,31 +8,31 @@ export class Process {
   @Prop()
   type: string;
 
-  @Prop()
+  @Prop({default: 'in progress'})
   status: string;
 
-  @Prop()
+  @Prop({default: 0})
   total: number;
 
-  @Prop()
+  @Prop({default: 0})
   valid: number;
 
-  @Prop()
+  @Prop({default: 0})
   unvalid: number;
 
-  @Prop()
+  @Prop({default: 0})
   updated: number;
 
-  @Prop()
+  @Prop({default: 0})
   created: number;
 
-  @Prop()
+  @Prop({default: 0})
   duplicate: number;
 
-  @Prop()
+  @Prop({default: new Date()})
   startIn: Date;
 
-  @Prop()
+  @Prop({default: null})
   endIn: Date;
 }
 
