@@ -12,19 +12,17 @@ import {
 } from '../department/entities/department.entity';
 import csv from 'csvtojson';
 import { ClientProxy } from '@nestjs/microservices';
-import * as readline from "readline";
+import * as readline from 'readline';
 
-import {ReadStream} from "fs";
-import {Process, ProcessDocument} from "./entities/processEntity";
-
-
-
+import { ReadStream } from 'fs';
+import { Process, ProcessDocument } from './entities/processEntity';
 
 @Injectable()
 export class EmployeeService {
   constructor(
     @InjectModel(Employee.name) private employeeModel: Model<EmployeeDocument>,
-    @InjectModel(Department.name) private departmentModel: Model<DepartmentDocument>,
+    @InjectModel(Department.name)
+    private departmentModel: Model<DepartmentDocument>,
     @InjectModel(Process.name) private processModel: Model<ProcessDocument>,
     @Inject('SERVICE') private readonly client: ClientProxy,
   ) {}
@@ -79,57 +77,95 @@ export class EmployeeService {
   }
 
   async readCsvFile(fileData, mode) {
+    const currentProcess = await this.processModel.create({
+      type: mode,
+      status: 'in progress',
+      total: 0,
+      updated: 0,
+      created: 0,
+      unvalid: 0,
+      duplicate: 0,
+      startIn: new Date(),
+      endIn: null,
+    });
+    let unvalid = 0;
+    let total = 0;
+    const data = {
+      queryForBulk: [],
+      currentProcess,
+    };
+    const readstream = ReadStream.from(fileData.buffer.toString());
+    const rlstream = readline.createInterface({
+      input: readstream.pipe(csv()),
+    });
     if (mode === 'update') {
-      const currentProcess =  await this.processModel.create({type: mode, status: 'in progress', total: 0, updated: 0, unvalid: 0, duplicate: 0, startIn: new Date(), endIn: null})
-      let unvalid = 0;
-      let total = 0;
-      let data = {
-        queryForBulk: [],
-        currentProcess
-      };
-      const readstream = ReadStream.from(fileData.buffer.toString())
-      const rlstream = readline.createInterface({
-        input: readstream.pipe(csv()),
-      });
       rlstream.on('line', (item) => {
-        console.log('line')
-        const itemJson = JSON.parse(item)
-        total++
+        const itemJson = JSON.parse(item);
+        total++;
         if (!itemJson.department) itemJson.department = null;
-        if (validate(itemJson._id) && (validate(itemJson.department) || !itemJson.department)) {
+        if (
+          validate(itemJson._id) &&
+          (validate(itemJson.department) || !itemJson.department)
+        ) {
           const id = itemJson._id;
           delete itemJson._id;
-          data.queryForBulk.push({updateOne: {filter: {_id: id.toString()}, update: itemJson}})
+          data.queryForBulk.push({
+            updateOne: { filter: { _id: id.toString() }, update: itemJson },
+          });
+          if (data.queryForBulk.length % 25000 === 0 && data.queryForBulk.length) {
+            const newData = {
+              queryForBulk: [...data.queryForBulk],
+              currentProcess,
+            };
+            this.client.send('updateEmp', newData).subscribe();
+            data.queryForBulk = [];
+          }
+        } else {
+          unvalid++;
+        }
+      });
+      rlstream.on('close', async () => {
+        if (data.queryForBulk.length) {
+          this.client.send('updateEmp', data).subscribe();
+        }
+        await this.processModel.updateOne(
+          { _id: currentProcess._id },
+          { total, unvalid },
+        );
+      });
+      return 'success update';
+    } else if (mode === 'create') {
+      rlstream.on('line', (item) => {
+        const itemJson = JSON.parse(item);
+        total++;
+        if (!itemJson.department) itemJson.department = null;
+        if ((validate(itemJson.department) || !itemJson.department)) {
+          data.queryForBulk.push({
+            insertOne: { document: itemJson },
+          });
           if (data.queryForBulk.length % 2 === 0 && data.queryForBulk.length) {
             const newData = {
               queryForBulk: [...data.queryForBulk],
-              currentProcess
-            }
+              currentProcess,
+            };
             this.client.send('updateEmp', newData).subscribe();
-            data.queryForBulk = []
+            data.queryForBulk = [];
           }
         } else {
-          unvalid++
+          unvalid++;
         }
-      })
+      });
 
       rlstream.on('close', async () => {
-              if(data.queryForBulk.length){
-                this.client.send('updateEmp', data);
-              }
-              await this.processModel.updateOne({_id: currentProcess._id}, {total, unvalid})
-            })
-      return 'success';
-    } else if (mode === 'create') {
-      // const stream = await csv({})
-      //   .fromString(String(fileData.buffer))
-      //   .subscribe((item, lineNumber) => {
-      //     if (!item.department) item.department = null;
-      //     if (validate(item.department) || !item.department) {
-      //       this.client.emit('createEmp', item);
-      //     }
-      //   });
-      return 'success';
+        if (data.queryForBulk.length) {
+          this.client.send('updateEmp', data).subscribe();
+        }
+        await this.processModel.updateOne(
+            { _id: currentProcess._id },
+            { total, unvalid },
+        );
+      });
+      return 'success created';
     }
   }
 }

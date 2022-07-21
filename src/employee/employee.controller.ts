@@ -16,6 +16,8 @@ import { UpdateEmployeeDto } from './dto/update-employee.dto';
 import { Employee } from './entities/employee.entity';
 import { Response } from 'express';
 import { FileInterceptor } from '@nestjs/platform-express';
+import * as fs from "fs";
+import {faker} from "@faker-js/faker";
 
 @Controller('employees')
 export class EmployeeController {
@@ -96,4 +98,21 @@ export class EmployeeController {
       console.log(e);
     }
   }
+
+  @Post('testfaker')
+  async fake(){
+    try {
+      const ws = fs.createWriteStream('test.txt')
+      let i = 0
+      while(i < 200000){
+        ws.write(`"${faker.name.findName()}","${faker.random.numeric(2)}","${faker.internet.exampleEmail()}","${faker.random.alpha(4)}",\n`)
+        i++
+      }
+      return 'good'
+    }
+    catch (e) {
+      console.log(e)
+    }
+  }
+
 }

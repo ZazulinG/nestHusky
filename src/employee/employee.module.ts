@@ -8,14 +8,14 @@ import {
   DepartmentEntity,
 } from '../department/entities/department.entity';
 import { ClientsModule, Transport } from '@nestjs/microservices';
-import {Process, ProcessEntity} from "./entities/processEntity";
+import { Process, ProcessEntity } from './entities/processEntity';
 
 @Module({
   imports: [
     MongooseModule.forFeature([
       { name: Employee.name, schema: EmployeeEntity },
       { name: Department.name, schema: DepartmentEntity },
-      { name: Process.name, schema: ProcessEntity }
+      { name: Process.name, schema: ProcessEntity },
     ]),
     ClientsModule.register([
       {

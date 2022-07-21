@@ -1,5 +1,5 @@
-import {Document} from "mongoose";
-import {Prop, Schema, SchemaFactory} from "@nestjs/mongoose";
+import { Document } from 'mongoose';
+import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 
 export type ProcessDocument = Process & Document;
 
@@ -15,13 +15,16 @@ export class Process {
   total: number;
 
   @Prop()
-  valid: number
+  valid: number;
 
   @Prop()
   unvalid: number;
 
   @Prop()
   updated: number;
+
+  @Prop()
+  created: number
 
   @Prop()
   duplicate: number;
