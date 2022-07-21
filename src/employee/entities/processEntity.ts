@@ -24,7 +24,7 @@ export class Process {
   updated: number;
 
   @Prop()
-  created: number
+  created: number;
 
   @Prop()
   duplicate: number;

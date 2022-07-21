@@ -112,7 +112,10 @@ export class EmployeeService {
           data.queryForBulk.push({
             updateOne: { filter: { _id: id.toString() }, update: itemJson },
           });
-          if (data.queryForBulk.length % 25000 === 0 && data.queryForBulk.length) {
+          if (
+            data.queryForBulk.length % 25000 === 0 &&
+            data.queryForBulk.length
+          ) {
             const newData = {
               queryForBulk: [...data.queryForBulk],
               currentProcess,
@@ -139,7 +142,7 @@ export class EmployeeService {
         const itemJson = JSON.parse(item);
         total++;
         if (!itemJson.department) itemJson.department = null;
-        if ((validate(itemJson.department) || !itemJson.department)) {
+        if (validate(itemJson.department) || !itemJson.department) {
           data.queryForBulk.push({
             insertOne: { document: itemJson },
           });
@@ -161,8 +164,8 @@ export class EmployeeService {
           this.client.send('updateEmp', data).subscribe();
         }
         await this.processModel.updateOne(
-            { _id: currentProcess._id },
-            { total, unvalid },
+          { _id: currentProcess._id },
+          { total, unvalid },
         );
       });
       return 'success created';
