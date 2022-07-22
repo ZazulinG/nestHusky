@@ -6,18 +6,27 @@ import {
   Patch,
   Param,
   Delete,
-  Put,
+  Put, NotFoundException,
 } from '@nestjs/common';
 import { DepartmentService } from './department.service';
 import { CreateDepartmentDto } from './dto/create-department.dto';
 import { UpdateDepartmentDto } from './dto/update-department.dto';
 import { Department } from './entities/department.entity';
+import {ApiBody, ApiCreatedResponse, ApiNotFoundResponse, ApiOkResponse, ApiOperation, ApiTags} from "@nestjs/swagger";
+import {Employee} from "../employee/entities/employee.entity";
+import {UpdateEmployeeDto} from "../employee/dto/update-employee.dto";
 
+
+
+@ApiTags('Departments')
 @Controller('departments')
 export class DepartmentController {
   constructor(private readonly departmentService: DepartmentService) {}
 
   @Post()
+  @ApiOperation({summary: 'Create department'})
+  @ApiCreatedResponse({type: Department})
+  @ApiBody({type: CreateDepartmentDto})
   create(
     @Body() createDepartmentDto: CreateDepartmentDto,
   ): Promise<Department> {
@@ -29,6 +38,8 @@ export class DepartmentController {
   }
 
   @Get()
+  @ApiOperation({summary: 'All departments'})
+  @ApiOkResponse({type: [Department]})
   findAll() {
     try {
       return this.departmentService.findAll();
@@ -38,6 +49,9 @@ export class DepartmentController {
   }
 
   @Get(':id')
+  @ApiOperation({summary: 'Info about department'})
+  @ApiOkResponse({description: 'Department', type: Department})
+  @ApiNotFoundResponse({description: 'Not found'})
   async findOne(@Param('id') id: string) {
     try {
       return await this.departmentService.findOne(id);
@@ -47,6 +61,8 @@ export class DepartmentController {
   }
 
   @Patch(':id')
+  @ApiOperation({summary: 'Update department'})
+  @ApiBody({type: UpdateDepartmentDto})
   update(
     @Param('id') id: string,
     @Body() updateDepartmentDto: UpdateDepartmentDto,
@@ -59,6 +75,8 @@ export class DepartmentController {
   }
 
   @Delete(':id')
+  @ApiOperation({summary: 'Remove department'})
+  @ApiOkResponse({description: 'success deleted'})
   remove(@Param('id') id: string) {
     try {
       return this.departmentService.remove(id);
@@ -68,6 +86,8 @@ export class DepartmentController {
   }
 
   @Put(':idDep/employees/:idEmp')
+  @ApiOperation({summary: 'Remove employee from department'})
+  @ApiOkResponse({description: 'success deleted'})
   deleteEmpFromDepartment(
     @Param('idEmp') idEmp: string,
     @Param('idDep') idDep: string,

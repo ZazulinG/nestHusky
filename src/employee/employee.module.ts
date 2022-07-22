@@ -9,6 +9,8 @@ import {
 } from '../department/entities/department.entity';
 import { ClientsModule, Transport } from '@nestjs/microservices';
 import { Process, ProcessEntity } from './entities/processEntity';
+import {MongoWrapperService} from "../mongo-wrapper/mongo-wrapper.service";
+
 
 @Module({
   imports: [
@@ -32,6 +34,6 @@ import { Process, ProcessEntity } from './entities/processEntity';
     ]),
   ],
   controllers: [EmployeeController],
-  providers: [EmployeeService],
+  providers: [EmployeeService, MongoWrapperService],
 })
 export class EmployeeModule {}

@@ -1,38 +1,49 @@
 import { Document } from 'mongoose';
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
+import {ApiProperty} from "@nestjs/swagger";
 
 export type ProcessDocument = Process & Document;
 
 @Schema()
 export class Process {
+  @ApiProperty({description: 'Type of process'})
   @Prop()
   type: string;
 
-  @Prop({default: 'in progress'})
+  @ApiProperty({description: 'Status of process'})
+  @Prop({ default: 'in progress' })
   status: string;
 
-  @Prop({default: 0})
+  @ApiProperty({description: 'Amount entry'})
+  @Prop({ default: 0 })
   total: number;
 
-  @Prop({default: 0})
+  @ApiProperty({description: 'Amount valid entry'})
+  @Prop({ default: 0 })
   valid: number;
 
-  @Prop({default: 0})
+  @ApiProperty({description: 'Amount unvalid entry'})
+  @Prop({ default: 0 })
   unvalid: number;
 
-  @Prop({default: 0})
+  @ApiProperty({description: 'Amount updated entry'})
+  @Prop({ default: 0 })
   updated: number;
 
-  @Prop({default: 0})
+  @ApiProperty({description: 'Amount created entry'})
+  @Prop({ default: 0 })
   created: number;
 
-  @Prop({default: 0})
+  @ApiProperty({description: 'Amount dublicate'})
+  @Prop({ default: 0 })
   duplicate: number;
 
-  @Prop({default: new Date()})
+  @ApiProperty({description: 'Date of start'})
+  @Prop({ default: new Date() })
   startIn: Date;
 
-  @Prop({default: null})
+  @ApiProperty({description: 'Date of end'})
+  @Prop({ default: null })
   endIn: Date;
 }
 
