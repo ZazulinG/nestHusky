@@ -1,7 +1,7 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import mongoose, { Document } from 'mongoose';
+import { ApiProperty } from '@nestjs/swagger';
 import { Department } from '../../department/entities/department.entity';
-import {ApiProperty} from "@nestjs/swagger";
 
 export type EmployeeDocument = Employee & Document;
 
@@ -23,7 +23,7 @@ export class Employee {
   @Prop()
   position: string;
 
-  @ApiProperty({type: Department})
+  @ApiProperty({ type: Department })
   @Prop({ type: mongoose.Schema.Types.ObjectId, ref: 'Department' })
   department: Department;
 }
