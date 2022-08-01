@@ -1,0 +1,3 @@
+[submodule "src/mongo-wrapper"]
+	path = src/mongo-wrapper
+	url = https://github.com/ZazulinFJ/mongo-wrapper

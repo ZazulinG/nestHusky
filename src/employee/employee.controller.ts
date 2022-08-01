@@ -29,11 +29,16 @@ import {
 import { CreateEmployeeDto } from './dto/create-employee.dto';
 import { Employee } from './entities/employee.entity';
 import { UpdateEmployeeDto } from './dto/update-employee.dto';
+import {SchedulerRegistry} from "@nestjs/schedule";
+import {DBSQLFactory} from "../postgres-wrapper/postgres-wrapper.service";
+import {Schema} from "mongoose";
 
 @ApiTags('Employees')
 @Controller('employees')
 export class EmployeeController {
-  constructor(private readonly employeeService: EmployeeService) {}
+  private readonly logs = DBSQLFactory.getModel('controllerLogs')
+  constructor(private readonly employeeService: EmployeeService,
+              private schedulerRegistry: SchedulerRegistry) {}
 
   @Post()
   @ApiOperation({ summary: 'Create employee' })
@@ -52,6 +57,7 @@ export class EmployeeController {
   @ApiOkResponse({ type: [Employee] })
   async findAll(): Promise<Employee[]> {
     try {
+      await this.logs.insertOne({controllername: EmployeeController.name, httpquery_id: 1, success: true})
       return await this.employeeService.findAll();
     } catch (e) {
       console.log(e);
@@ -137,4 +143,6 @@ export class EmployeeController {
       console.log(e);
     }
   }
+
+
 }

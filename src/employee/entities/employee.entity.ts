@@ -5,8 +5,10 @@ import { Department } from '../../department/entities/department.entity';
 
 export type EmployeeDocument = Employee & Document;
 
+
 @Schema()
-export class Employee {
+export class Employee  {
+
   @ApiProperty()
   @Prop()
   name: string;
@@ -26,6 +28,7 @@ export class Employee {
   @ApiProperty({ type: Department })
   @Prop({ type: mongoose.Schema.Types.ObjectId, ref: 'Department' })
   department: Department;
+
 }
 
 export const EmployeeEntity = SchemaFactory.createForClass(Employee);

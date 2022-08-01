@@ -4,25 +4,22 @@ import { validate } from '../helper/helper';
 import FileHelper from '../helper/FileHelper';
 import csv from 'csvtojson';
 import { ClientProxy } from '@nestjs/microservices';
-import * as readline from 'readline';
 import { ReadStream } from 'fs';
 import { ProcessEntity } from './entities/processEntity';
 import { DBFactory } from '../mongo-wrapper/mongo-wrapper.service';
-
 import { Employee, EmployeeEntity } from './entities/employee.entity';
-import { CreateEmployeeDto } from './dto/create-employee.dto';
 import { UpdateEmployeeDto } from './dto/update-employee.dto';
+
 
 
 @Injectable()
 export class EmployeeService {
   private employeeModel = DBFactory.getModel('Employee', EmployeeEntity);
   private processModel = DBFactory.getModel('Process', ProcessEntity);
-  constructor(
-    @Inject('SERVICE') private readonly client: ClientProxy,
-  ) {}
+  constructor(@Inject('SERVICE') private readonly client: ClientProxy,
+              @Inject('SERVICE_CRON') private readonly clientCron: ClientProxy) {}
 
-  async create(createEmployeeDto: CreateEmployeeDto) {
+  async create(createEmployeeDto) {
     return this.employeeModel.create(createEmployeeDto);
   }
 
@@ -61,7 +58,6 @@ export class EmployeeService {
   async remove(id: string): Promise<string> {
     if (!validate(id)) throw new NotFoundException();
     const empDeleted = await this.employeeModel.deleteOne({ _id: id });
-    console.log(empDeleted);
     if (empDeleted.deletedCount) {
       return 'success deleted';
     }
@@ -75,17 +71,15 @@ export class EmployeeService {
 
   async readCsvFile(fileData, mode): Promise<string> {
     const currentProcess = await this.processModel.create({ type: mode });
+    await this.clientCron.emit('checkProcess', currentProcess)
     let unvalid = 0;
     let total = 0;
     const data = {
       queryForBulk: [],
       currentProcess,
     };
-    const readstream = ReadStream.from(fileData.buffer.toString());
-    const rlstream = readline.createInterface({
-      input: readstream.pipe(csv()),
-    });
-    rlstream.on('line', (item) => {
+    const readstream = ReadStream.from(fileData.buffer.toString()).pipe(csv());
+    readstream.on('data',  (item) => {
       const itemJson = JSON.parse(item);
       total++;
       if (!itemJson.department) itemJson.department = null;
@@ -95,7 +89,7 @@ export class EmployeeService {
             const id = itemJson._id;
             delete itemJson._id;
             data.queryForBulk.push({
-              updateOne: { filter: { _id: id.toString() }, update: itemJson },
+              updateOne: { filter: { _id: id }, update: itemJson },
             });
           } else {
             unvalid++;
@@ -106,7 +100,7 @@ export class EmployeeService {
           });
         }
         if (
-          data.queryForBulk.length % 25000 === 0 &&
+          data.queryForBulk.length % 1000 === 0 &&
           data.queryForBulk.length
         ) {
           const newData = {
@@ -120,7 +114,7 @@ export class EmployeeService {
         unvalid++;
       }
     });
-    rlstream.on('close', async () => {
+    readstream.on('end', async () => {
       if (data.queryForBulk.length) {
         this.client.send('updateEmp', data).subscribe();
       }
@@ -131,4 +125,5 @@ export class EmployeeService {
     });
     return 'success start';
   }
+
 }

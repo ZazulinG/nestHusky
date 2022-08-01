@@ -10,6 +10,12 @@ import { ConfigModule } from '@nestjs/config';
 import { MongooseConfigService } from './config/mongoose.config.service';
 import { WinstonModule } from 'nest-winston';
 import { WinstonConfigService } from './config/winston.config.service';
+import {ScheduleModule} from "@nestjs/schedule";
+import {TypeOrmModule} from "@nestjs/typeorm";
+import {PostgresWrapperModule} from "./postgres-wrapper/postgres-wrapper.module";
+import {SequelizeModule} from "@nestjs/sequelize";
+import {Employee} from "./employee/entities/employee.entity";
+import {Department} from "./department/entities/department.entity";
 
 @Module({
   imports: [
@@ -21,9 +27,11 @@ import { WinstonConfigService } from './config/winston.config.service';
       useClass: MongooseConfigService,
     }),
     DepartmentModule,
+    ScheduleModule.forRoot(),
     EmployeeModule,
     ProcessModule,
     MongoWrapperModule,
+    PostgresWrapperModule,
   ],
   controllers: [AppController],
   providers: [AppService],
